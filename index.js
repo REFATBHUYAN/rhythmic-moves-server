@@ -25,6 +25,7 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     client.connect();
     const usersCollection = client.db("danceClass").collection("users");
+    const classesCollection = client.db("danceClass").collection("classes");
     //  user collection
     app.get("/users", async (req, res) => {
       const result = await usersCollection.find().toArray();
@@ -39,8 +40,16 @@ async function run() {
 
       const query = { email: email };
       const user = await usersCollection.findOne(query);
-      const result = { admin: user?.role === "admin" };
-      res.send(result);
+      let result;
+      if(user?.role === "Admin"){
+        return res.send({ message: "Admin" });
+      }
+      else if(user?.role === "Instructor"){
+        return res.send({ message: "Instructor" });
+      }
+      else{
+        return res.send({ message: "Student" });
+      }
     });
 
     app.post("/users", async (req, res) => {
@@ -80,6 +89,12 @@ async function run() {
       const result = await usersCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
+    // classes section
+    app.post('/classes', async (req, res) => {
+        const newItem = req.body;
+        const result = await classesCollection.insertOne(newItem);
+        res.send(result);
+      })
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
