@@ -26,6 +26,7 @@ async function run() {
     client.connect();
     const usersCollection = client.db("danceClass").collection("users");
     const classesCollection = client.db("danceClass").collection("classes");
+    const selectClsCollection = client.db("danceClass").collection("selectCls");
     //  user collection
     app.get("/users", async (req, res) => {
       const result = await usersCollection.find().toArray();
@@ -133,6 +134,19 @@ async function run() {
       };
       const result = await classesCollection.updateOne(filter, updateDoc);
 
+      res.send(result);
+    });
+    // selected class cart
+    app.get('/selectClasses/:email', async(req,res)=>{
+      const email = req.params.email;
+      const query = {userEmail: email};
+      const result = await selectClsCollection.find(query).toArray();
+      res.send(result);
+    })
+    app.post("/selectClasses", async (req, res) => {
+      const newItem = req.body;
+      console.log(newItem);
+      const result = await selectClsCollection.insertOne(newItem);
       res.send(result);
     });
 
