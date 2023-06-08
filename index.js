@@ -31,6 +31,11 @@ async function run() {
       const result = await usersCollection.find().toArray();
       res.send(result);
     });
+    app.get('/users/instructor', async(req,res)=>{
+      const query = {role: 'Instructor'};
+      const result = await usersCollection.find(query).toArray();
+      res.send(result);
+    })
     app.get("/users/admin/:email", async (req, res) => {
       const email = req.params.email;
 
@@ -92,6 +97,11 @@ async function run() {
       const result = await classesCollection.find().toArray();
       res.send(result);
     });
+    app.get("/classes/approved", async (req, res) => {
+      const query = {status : "Approved"};
+      const result = await classesCollection.find(query).toArray();
+      res.send(result);
+    });
     app.post("/classes", async (req, res) => {
       const newItem = req.body;
       const result = await classesCollection.insertOne(newItem);
@@ -105,6 +115,20 @@ async function run() {
       const updateDoc = {
         $set: {
           status: updatedStatus.status,
+        },
+      };
+      const result = await classesCollection.updateOne(filter, updateDoc);
+
+      res.send(result);
+    });
+    app.patch("/classFeedback/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const addFeedback = req.body;
+      // console.log(addFeedback);
+      const updateDoc = {
+        $set: {
+          feedback: addFeedback.feedback,
         },
       };
       const result = await classesCollection.updateOne(filter, updateDoc);
