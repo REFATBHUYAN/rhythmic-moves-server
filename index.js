@@ -34,20 +34,18 @@ async function run() {
     app.get("/users/admin/:email", async (req, res) => {
       const email = req.params.email;
 
-    //   if (req.decoded.email !== email) {
-    //     res.send({ admin: false });
-    //   }
+      //   if (req.decoded.email !== email) {
+      //     res.send({ admin: false });
+      //   }
 
       const query = { email: email };
       const user = await usersCollection.findOne(query);
       let result;
-      if(user?.role === "Admin"){
+      if (user?.role === "Admin") {
         return res.send({ message: "Admin" });
-      }
-      else if(user?.role === "Instructor"){
+      } else if (user?.role === "Instructor") {
         return res.send({ message: "Instructor" });
-      }
-      else{
+      } else {
         return res.send({ message: "Student" });
       }
     });
@@ -79,7 +77,7 @@ async function run() {
     });
     app.patch("/users/admin/:id", async (req, res) => {
       const id = req.params.id;
-      console.log(id);
+      // console.log(id);
       const filter = { _id: new ObjectId(id) };
       const updateDoc = {
         $set: {
@@ -90,15 +88,29 @@ async function run() {
       res.send(result);
     });
     // classes section
-    app.get('/classes', async(req,res)=>{
+    app.get("/classes", async (req, res) => {
       const result = await classesCollection.find().toArray();
       res.send(result);
-    })
-    app.post('/classes', async (req, res) => {
-        const newItem = req.body;
-        const result = await classesCollection.insertOne(newItem);
-        res.send(result);
-      })
+    });
+    app.post("/classes", async (req, res) => {
+      const newItem = req.body;
+      const result = await classesCollection.insertOne(newItem);
+      res.send(result);
+    });
+    app.patch("/classes/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedStatus = req.body;
+      console.log(updatedStatus);
+      const updateDoc = {
+        $set: {
+          status: updatedStatus.status,
+        },
+      };
+      const result = await classesCollection.updateOne(filter, updateDoc);
+
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
