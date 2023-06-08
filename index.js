@@ -90,6 +90,10 @@ async function run() {
       res.send(result);
     });
     // classes section
+    app.get('/classes', async(req,res)=>{
+      const result = await classesCollection.find().toArray();
+      res.send(result);
+    })
     app.post('/classes', async (req, res) => {
         const newItem = req.body;
         const result = await classesCollection.insertOne(newItem);
