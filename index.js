@@ -28,6 +28,7 @@ async function run() {
     const usersCollection = client.db("danceClass").collection("users");
     const classesCollection = client.db("danceClass").collection("classes");
     const selectClsCollection = client.db("danceClass").collection("selectCls");
+    const paymentCollection = client.db("danceClass").collection("payment");
     //  user collection
     app.get("/users", async (req, res) => {
       const result = await usersCollection.find().toArray();
@@ -144,9 +145,30 @@ async function run() {
       const result = await selectClsCollection.find(query).toArray();
       res.send(result);
     })
+    app.get('/enrollClasses/:email', async(req,res)=>{
+      const email = req.params.email;
+      const query = {email: email};
+      const paymentData = await paymentCollection.find(query).toArray();
+      const classIds = paymentData.map(data => data.classId.map(cls => cls));
+      const mergedArray = [].concat(...classIds);
+      const classes = await classesCollection.find({ _id: { $in: mergedArray.map(id => new ObjectId(id)) } }).toArray();
+      res.send(classes);
+    })
+    app.delete('/selectClass/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await selectClsCollection.deleteOne(query);
+      res.send(result);
+    })
     app.post("/selectClasses", async (req, res) => {
       const newItem = req.body;
       console.log(newItem);
+      const query = { _id: new ObjectId(newItem._id) }
+      const existingUser = await selectClsCollection.findOne(query);
+
+      if (existingUser) {
+        return res.send({ message: 'Class already Selected' })
+      }
       const result = await selectClsCollection.insertOne(newItem);
       res.send(result);
     });
@@ -163,6 +185,20 @@ async function run() {
       res.send({
         clientSecret: paymentIntent.client_secret
       })
+    })
+     app.post('/payments', async (req, res) => {
+      const payment = req.body;
+      const insertResult = await paymentCollection.insertOne(payment);
+
+      const query = { _id: { $in: payment.cartItems.map(id => new ObjectId(id)) } }
+      const filter = { _id: { $in: payment.classId.map(id => new ObjectId(id)) } }
+      const updateDoc = {
+        $inc: { seats: -1 }
+      };
+      const updateSeats = await classesCollection.updateMany(filter, updateDoc);
+      const deleteResult = await selectClsCollection.deleteMany(query)
+
+      res.send({ insertResult, deleteResult, updateSeats });
     })
 
     // Send a ping to confirm a successful connection
