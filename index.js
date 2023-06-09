@@ -4,7 +4,7 @@ const cors = require("cors");
 require("dotenv").config();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const port = process.env.PORT || 5000;
-const stripe = require('stripe')(process.env.PAYMENT_SECRET_KEY)
+const stripe = require("stripe")(process.env.PAYMENT_SECRET_KEY);
 
 // middleware
 app.use(cors());
@@ -34,11 +34,11 @@ async function run() {
       const result = await usersCollection.find().toArray();
       res.send(result);
     });
-    app.get('/users/instructor', async(req,res)=>{
-      const query = {role: 'Instructor'};
+    app.get("/users/instructor", async (req, res) => {
+      const query = { role: "Instructor" };
       const result = await usersCollection.find(query).toArray();
       res.send(result);
-    })
+    });
     app.get("/users/admin/:email", async (req, res) => {
       const email = req.params.email;
 
@@ -101,7 +101,7 @@ async function run() {
       res.send(result);
     });
     app.get("/classes/approved", async (req, res) => {
-      const query = {status : "Approved"};
+      const query = { status: "Approved" };
       const result = await classesCollection.find(query).toArray();
       res.send(result);
     });
@@ -139,67 +139,82 @@ async function run() {
       res.send(result);
     });
     // selected class cart
-    app.get('/selectClasses/:email', async(req,res)=>{
+    app.get("/selectClasses/:email", async (req, res) => {
       const email = req.params.email;
-      const query = {userEmail: email};
+      const query = { userEmail: email };
       const result = await selectClsCollection.find(query).toArray();
       res.send(result);
-    })
-    app.get('/enrollClasses/:email', async(req,res)=>{
+    });
+    app.get("/enrollClasses/:email", async (req, res) => {
       const email = req.params.email;
-      const query = {email: email};
+      const query = { email: email };
       const paymentData = await paymentCollection.find(query).toArray();
-      const classIds = paymentData.map(data => data.classId.map(cls => cls));
+      const classIds = paymentData.map((data) =>
+        data.classId.map((cls) => cls)
+      );
       const mergedArray = [].concat(...classIds);
-      const classes = await classesCollection.find({ _id: { $in: mergedArray.map(id => new ObjectId(id)) } }).toArray();
+      const classes = await classesCollection
+        .find({ _id: { $in: mergedArray.map((id) => new ObjectId(id)) } })
+        .toArray();
       res.send(classes);
-    })
-    app.delete('/selectClass/:id', async (req, res) => {
+    });
+    app.delete("/selectClass/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await selectClsCollection.deleteOne(query);
       res.send(result);
-    })
+    });
     app.post("/selectClasses", async (req, res) => {
       const newItem = req.body;
       console.log(newItem);
-      const query = { _id: new ObjectId(newItem._id) }
+      const query = { _id: new ObjectId(newItem._id) };
       const existingUser = await selectClsCollection.findOne(query);
 
       if (existingUser) {
-        return res.send({ message: 'Class already Selected' })
+        return res.send({ message: "Class already Selected" });
       }
       const result = await selectClsCollection.insertOne(newItem);
       res.send(result);
     });
-    // payment 
-    app.post('/create-payment-intent', async (req, res) => {
+    // payment
+    app.post("/create-payment-intent", async (req, res) => {
       const { price } = req.body;
       const amount = parseInt(price * 100);
       const paymentIntent = await stripe.paymentIntents.create({
         amount: amount,
-        currency: 'usd',
-        payment_method_types: ['card']
+        currency: "usd",
+        payment_method_types: ["card"],
       });
 
       res.send({
-        clientSecret: paymentIntent.client_secret
-      })
-    })
-     app.post('/payments', async (req, res) => {
+        clientSecret: paymentIntent.client_secret,
+      });
+    });
+    app.get("/payments/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const result = await paymentCollection.find(query).sort({ date: -1 }).toArray();
+      res.send(result);
+    });
+
+    app.post("/payments", async (req, res) => {
       const payment = req.body;
       const insertResult = await paymentCollection.insertOne(payment);
 
-      const query = { _id: { $in: payment.cartItems.map(id => new ObjectId(id)) } }
-      const filter = { _id: { $in: payment.classId.map(id => new ObjectId(id)) } }
+      const query = {
+        _id: { $in: payment.cartItems.map((id) => new ObjectId(id)) },
+      };
+      const filter = {
+        _id: { $in: payment.classId.map((id) => new ObjectId(id)) },
+      };
       const updateDoc = {
-        $inc: { seats: -1 }
+        $inc: { seats: -1 },
       };
       const updateSeats = await classesCollection.updateMany(filter, updateDoc);
-      const deleteResult = await selectClsCollection.deleteMany(query)
+      const deleteResult = await selectClsCollection.deleteMany(query);
 
       res.send({ insertResult, deleteResult, updateSeats });
-    })
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
