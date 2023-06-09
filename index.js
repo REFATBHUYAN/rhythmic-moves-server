@@ -254,7 +254,7 @@ async function run() {
         _id: { $in: payment.classId.map((id) => new ObjectId(id)) },
       };
       const updateDoc = {
-        $inc: { seats: -1 },
+        $inc: { seats: -1, enrolled: 1 },
       };
       const updateSeats = await classesCollection.updateMany(filter, updateDoc);
       const deleteResult = await selectClsCollection.deleteMany(query);
