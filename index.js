@@ -104,7 +104,7 @@ async function run() {
 
       const query = { email: email };
       const user = await usersCollection.findOne(query);
-      let result;
+      
       if (user?.role === "Admin") {
         return res.send({ message: "Admin" });
       } else if (user?.role === "Instructor") {
@@ -170,7 +170,7 @@ async function run() {
         .toArray();
       res.send(result);
     });
-    app.get("/classes/myClasses/:email", async (req, res) => {
+    app.get("/classes/myClasses/:email", verifyJWT, verifyInstructor, async (req, res) => {
       const email = req.params.email;
       const query = { email: email };
       const result = await classesCollection.find(query).toArray();
@@ -181,7 +181,7 @@ async function run() {
       const result = await classesCollection.insertOne(newItem);
       res.send(result);
     });
-    app.patch("/classes/:id", async (req, res) => {
+    app.patch("/classes/:id",verifyJWT, verifyInstructor, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
       const updatedStatus = req.body;
@@ -195,7 +195,24 @@ async function run() {
 
       res.send(result);
     });
-    app.patch("/classFeedback/:id", async (req, res) => {
+    app.patch("/classUpdate/:id",verifyJWT, verifyInstructor, async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedClass = req.body;
+      // console.log(updatedClass);
+      const updateDoc = {
+        $set: {
+          price: updatedClass.price,
+          className: updatedClass.className,
+          seats: updatedClass.seats,
+          classImg: updatedClass.classImg,
+        },
+      };
+      const result = await classesCollection.updateOne(filter, updateDoc);
+
+      res.send(result);
+    });
+    app.patch("/classFeedback/:id", verifyJWT, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
       const addFeedback = req.body;
@@ -210,13 +227,13 @@ async function run() {
       res.send(result);
     });
     // selected class cart
-    app.get("/selectClasses/:email", async (req, res) => {
+    app.get("/selectClasses/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
       const query = { userEmail: email };
       const result = await selectClsCollection.find(query).toArray();
       res.send(result);
     });
-    app.get("/enrollClasses/:email", async (req, res) => {
+    app.get("/enrollClasses/:email",verifyJWT, async (req, res) => {
       const email = req.params.email;
       const query = { email: email };
       const paymentData = await paymentCollection.find(query).toArray();
@@ -241,7 +258,7 @@ async function run() {
     //     .toArray();
     //   res.send(classes);
     // });
-    app.delete("/selectClass/:id", async (req, res) => {
+    app.delete("/selectClass/:id",verifyJWT, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await selectClsCollection.deleteOne(query);
@@ -273,7 +290,7 @@ async function run() {
         clientSecret: paymentIntent.client_secret,
       });
     });
-    app.get("/payments/:email", async (req, res) => {
+    app.get("/payments/:email",verifyJWT, async (req, res) => {
       const email = req.params.email;
       const query = { email: email };
       const result = await paymentCollection
