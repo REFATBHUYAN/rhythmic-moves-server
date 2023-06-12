@@ -127,7 +127,7 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/users/instructor/:id",verifyJWT, verifyAdmin, async (req, res) => {
+    app.patch("/users/instructor/:id", async (req, res) => {
       const id = req.params.id;
       console.log(id);
       const filter = { _id: new ObjectId(id) };
@@ -139,7 +139,7 @@ async function run() {
       const result = await usersCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
-    app.patch("/users/admin/:id",verifyJWT, verifyAdmin, async (req, res) => {
+    app.patch("/users/admin/:id", async (req, res) => {
       const id = req.params.id;
       // console.log(id);
       const filter = { _id: new ObjectId(id) };
@@ -176,12 +176,12 @@ async function run() {
       const result = await classesCollection.find(query).toArray();
       res.send(result);
     });
-    app.post("/classes",verifyJWT, verifyInstructor, async (req, res) => {
+    app.post("/classes", async (req, res) => {
       const newItem = req.body;
       const result = await classesCollection.insertOne(newItem);
       res.send(result);
     });
-    app.patch("/classes/:id",verifyJWT, verifyInstructor, async (req, res) => {
+    app.patch("/classes/:id", async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
       const updatedStatus = req.body;
@@ -195,7 +195,7 @@ async function run() {
 
       res.send(result);
     });
-    app.patch("/classUpdate/:id",verifyJWT, verifyInstructor, async (req, res) => {
+    app.patch("/classUpdate/:id", async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
       const updatedClass = req.body;
@@ -212,7 +212,7 @@ async function run() {
 
       res.send(result);
     });
-    app.patch("/classFeedback/:id", verifyJWT, verifyAdmin, async (req, res) => {
+    app.patch("/classFeedback/:id", async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
       const addFeedback = req.body;
@@ -258,7 +258,7 @@ async function run() {
     //     .toArray();
     //   res.send(classes);
     // });
-    app.delete("/selectClass/:id",verifyJWT, async (req, res) => {
+    app.delete("/selectClass/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await selectClsCollection.deleteOne(query);
